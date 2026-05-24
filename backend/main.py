@@ -214,9 +214,11 @@ JSON 格式如下：
 
         "dcard_comments_count": len(dcard_comments),
         "dcard_posts": dcard_data["posts"],
-
-        "analysis": analysis
-
+        
         "google_results_count": len(google_results),
         "google_results": google_results,
+        
+        "analysis": analysis
+
+        
     }
