@@ -39,6 +39,13 @@ class ReviewRequest(BaseModel):
     reviews: List[str]
     youtube_url: str = ""
 
+@app.get("/debug-version")
+def debug_version():
+    return {
+        "version": "clean-json-api-2026-05-25",
+        "analyze_type": "json_body"
+    }
+    
 # 分析 API
 @app.post("/analyze")
 def analyze_reviews(data: ReviewRequest):
