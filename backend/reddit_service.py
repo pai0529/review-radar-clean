@@ -5,65 +5,79 @@ HEADERS = {
 }
 
 def collect_reddit_reviews(keyword, limit=5):
-
     posts = []
     comments = []
 
-    url = f"https://www.reddit.com/search.json?q={keyword}&limit={limit}"
+    try:
+        url = f"https://www.reddit.com/search.json?q={keyword}&limit={limit}"
 
-    response = requests.get(
-        url,
-        headers=HEADERS
-    )
+        response = requests.get(
+            url,
+            headers=HEADERS,
+            timeout=10
+        )
 
-    data = response.json()
+        if response.status_code != 200:
+            print("Reddit search status:", response.status_code)
+            print("Reddit search text:", response.text[:300])
+            return {
+                "posts": posts,
+                "comments": comments
+            }
 
-    for post in data["data"]["children"]:
+        data = response.json()
 
-        post_data = post["data"]
+        for post in data.get("data", {}).get("children", []):
+            post_data = post.get("data", {})
 
-        title = post_data.get("title", "")
-        selftext = post_data.get("selftext", "")
-        permalink = post_data.get("permalink", "")
+            title = post_data.get("title", "")
+            permalink = post_data.get("permalink", "")
 
-        post_url = f"https://www.reddit.com{permalink}"
+            if not permalink:
+                continue
 
-        posts.append({
-            "title": title,
-            "url": post_url
-        })
+            post_url = f"https://www.reddit.com{permalink}"
 
-        # 抓留言
-        try:
+            posts.append({
+                "title": title,
+                "url": post_url
+            })
 
-            comment_url = f"https://www.reddit.com{permalink}.json"
+            try:
+                comment_url = f"https://www.reddit.com{permalink}.json"
 
-            comment_response = requests.get(
-                comment_url,
-                headers=HEADERS
-            )
+                comment_response = requests.get(
+                    comment_url,
+                    headers=HEADERS,
+                    timeout=10
+                )
 
-            comment_json = comment_response.json()
+                if comment_response.status_code != 200:
+                    print("Reddit comment status:", comment_response.status_code)
+                    continue
 
-            if len(comment_json) > 1:
+                comment_json = comment_response.json()
 
-                comment_list = comment_json[1]["data"]["children"]
+                if len(comment_json) > 1:
+                    comment_list = comment_json[1].get("data", {}).get("children", [])
 
-                for c in comment_list[:10]:
+                    for c in comment_list[:10]:
+                        if c.get("kind") != "t1":
+                            continue
 
-                    if c["kind"] != "t1":
-                        continue
+                        body = c.get("data", {}).get("body", "")
 
-                    body = c["data"].get("body", "")
+                        if body:
+                            comments.append({
+                                "text": body,
+                                "source": "Reddit"
+                            })
 
-                    if body:
-                        comments.append({
-                            "text": body,
-                            "source": "Reddit"
-                        })
+            except Exception as e:
+                print("Reddit comment error:", e)
 
-        except Exception:
-            pass
+    except Exception as e:
+        print("Reddit search error:", e)
 
     return {
         "posts": posts,
