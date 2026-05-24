@@ -48,7 +48,7 @@ export default function ReviewClient({
       setTimeout(() => setStatusText("正在交給 AI 分析評論..."), 2400);
 
       try {
-        const res = await fetch("https://review-radar-api.onrender.com/docs#/analyze/", {
+        const res = await fetch("https://review-radar-api.onrender.com/analyze", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
