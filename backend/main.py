@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from youtube_service import collect_youtube_reviews
 from reddit_service import collect_reddit_reviews
 from dcard_service import collect_dcard_reviews
+from google_search_service import google_search_reviews
 
 import os
 import json
@@ -111,6 +112,15 @@ def analyze_reviews(data: ReviewRequest):
 
     print("dcard comments:", len(dcard_comments))
 
+    google_results = google_search_reviews(
+        data.product_name,
+        max_results=3
+    )
+
+    google_texts = [
+        f"{item['title']}：{item['snippet']}"
+        for item in google_results
+    ]
     # =========================
     # 合併所有評論
     # =========================
@@ -119,7 +129,8 @@ def analyze_reviews(data: ReviewRequest):
         + youtube_texts
         + reddit_texts
         + dcard_texts
-    )
+        + google_texts
+)
 
     reviews_text = "\n".join(all_reviews)
 
@@ -205,4 +216,7 @@ JSON 格式如下：
         "dcard_posts": dcard_data["posts"],
 
         "analysis": analysis
+
+        "google_results_count": len(google_results),
+        "google_results": google_results,
     }
