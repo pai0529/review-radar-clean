@@ -8,10 +8,12 @@ function fromSlug(slug: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
 
-  const productName = fromSlug(params.slug);
+  const { slug } = await params;
+
+  const productName = fromSlug(slug);
 
   return {
     title: `${productName} AI 評價分析 | ReviewRadar`,
@@ -19,10 +21,13 @@ export async function generateMetadata({
   };
 }
 
-export default function ReviewPage({
+export default async function ReviewPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  return <ReviewClient slug={params.slug} />;
+
+  const { slug } = await params;
+
+  return <ReviewClient slug={slug} />;
 }
