@@ -10,28 +10,45 @@ import json
 
 load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY")
+)
 
-app = FastAPI()
+app = FastAPI(
+    title="Review Radar API"
+)
 
+# CORS 設定
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "http://127.0.0.1:3000"
+        "http://127.0.0.1:3000",
+        "https://review-radar-black.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# 測試 API 是否正常
+@app.get("/health")
+def health():
+    return {
+        "status": "ok"
+    }
+
+# Request Model
 class ReviewRequest(BaseModel):
     product_name: str
     reviews: List[str]
     youtube_url: str = ""
 
+# 分析 API
 @app.post("/analyze")
 def analyze_reviews(data: ReviewRequest):
+
+    # 抓 YouTube 留言
     youtube_data = collect_youtube_reviews(
         data.product_name,
         max_videos=3,
@@ -45,10 +62,12 @@ def analyze_reviews(data: ReviewRequest):
         for comment in youtube_comments
     ]
 
+    # 合併評論
     all_reviews = data.reviews + youtube_texts
 
     reviews_text = "\n".join(all_reviews)
 
+    # AI Prompt
     prompt = f"""
 你是一個專業商品與 App 評論分析 AI。
 
@@ -73,6 +92,7 @@ JSON 格式如下：
 }}
 """
 
+    # OpenAI 分析
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -81,13 +101,17 @@ JSON 格式如下：
                 "content": prompt
             }
         ],
-        response_format={"type": "json_object"}
+        response_format={
+            "type": "json_object"
+        }
     )
 
     content = response.choices[0].message.content
 
+    # JSON 解析
     try:
         analysis = json.loads(content)
+
     except Exception:
         analysis = {
             "score": 0,
@@ -100,6 +124,7 @@ JSON 格式如下：
             "confidence": "低"
         }
 
+    # 回傳結果
     return {
         "product_name": data.product_name,
         "manual_reviews_count": len(data.reviews),
