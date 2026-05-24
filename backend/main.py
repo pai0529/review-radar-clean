@@ -47,7 +47,8 @@ class ReviewRequest(BaseModel):
 
 @app.post("/analyze")
 def analyze_reviews(data: ReviewRequest):
-
+    print("analyze endpoint hit")
+    print(data)
     youtube_data = collect_youtube_reviews(
         data.product_name,
         max_videos=3,
