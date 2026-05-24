@@ -23,7 +23,6 @@ app = FastAPI(
     title="Review Radar API"
 )
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,37 +31,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 健康檢查
 @app.get("/health")
 def health():
     return {
         "status": "ok"
     }
 
-# Debug
 @app.get("/debug-version")
 def debug_version():
     return {
-        "version": "youtube-reddit-dcard-api",
+        "version": "youtube-reddit-dcard-google-api",
         "analyze_type": "json_body"
     }
 
-# Request Model
 class ReviewRequest(BaseModel):
     product_name: str
     reviews: List[str]
     youtube_url: str = ""
 
-# 分析 API
 @app.post("/analyze")
 def analyze_reviews(data: ReviewRequest):
 
     print("analyze endpoint hit")
     print(data)
 
-    # =========================
-    # YouTube
-    # =========================
     youtube_data = collect_youtube_reviews(
         data.product_name,
         max_videos=3,
@@ -78,9 +70,6 @@ def analyze_reviews(data: ReviewRequest):
 
     print("youtube comments:", len(youtube_comments))
 
-    # =========================
-    # Reddit
-    # =========================
     reddit_data = collect_reddit_reviews(
         data.product_name,
         limit=5
@@ -95,9 +84,6 @@ def analyze_reviews(data: ReviewRequest):
 
     print("reddit comments:", len(reddit_comments))
 
-    # =========================
-    # Dcard
-    # =========================
     dcard_data = collect_dcard_reviews(
         data.product_name,
         limit=5
@@ -121,22 +107,19 @@ def analyze_reviews(data: ReviewRequest):
         f"{item['title']}：{item['snippet']}"
         for item in google_results
     ]
-    # =========================
-    # 合併所有評論
-    # =========================
+
+    print("google results:", len(google_results))
+
     all_reviews = (
         data.reviews
         + youtube_texts
         + reddit_texts
         + dcard_texts
         + google_texts
-)
+    )
 
     reviews_text = "\n".join(all_reviews)
 
-    # =========================
-    # AI Prompt
-    # =========================
     prompt = f"""
 你是一個專業商品與 App 評論分析 AI。
 
@@ -162,9 +145,6 @@ JSON 格式如下：
 }}
 """
 
-    # =========================
-    # OpenAI 分析
-    # =========================
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -180,9 +160,6 @@ JSON 格式如下：
 
     content = response.choices[0].message.content
 
-    # =========================
-    # JSON 解析
-    # =========================
     try:
         analysis = json.loads(content)
 
@@ -198,9 +175,6 @@ JSON 格式如下：
             "confidence": "低"
         }
 
-    # =========================
-    # 回傳結果
-    # =========================
     return {
         "product_name": data.product_name,
 
@@ -214,11 +188,9 @@ JSON 格式如下：
 
         "dcard_comments_count": len(dcard_comments),
         "dcard_posts": dcard_data["posts"],
-        
+
         "google_results_count": len(google_results),
         "google_results": google_results,
-        
-        "analysis": analysis
 
-        
+        "analysis": analysis
     }
