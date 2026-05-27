@@ -27,7 +27,7 @@ export default function Home() {
           AI 商品口碑搜尋引擎
         </div>
 
-        <h1 className="text-5xl font-bold md:text-7xl">ReviewRadar</h1>
+        <h1 className="text-5xl font-bold md:text-7xl">PulsePick</h1>
 
         <p className="mx-auto mt-5 max-w-2xl text-zinc-400">
           搜尋你想了解的商品或 App，AI 會整理多個平台的評論，產生客觀評分、優缺點與購買建議。

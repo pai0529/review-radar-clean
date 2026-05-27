@@ -1,4 +1,4 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import ReviewClient from "./ReviewClient";
 
 type Props = {
@@ -7,46 +7,28 @@ type Props = {
   }>;
 };
 
-export async function generateMetadata(
-  { params }: Props
-): Promise<Metadata> {
+function fromSlug(slug: string) {
+  return decodeURIComponent(slug).replace(/-/g, " ");
+}
 
+export async function generateMetadata({
+  params,
+}: Props): Promise<Metadata> {
   const { slug } = await params;
-
-  const productName = slug
-    .replace(/-/g, " ");
-
-  const title =
-    `${productName} 評價總整理｜PulsePick`;
-
-  const description =
-    `AI 整理 YouTube、PTT、Dcard、Reddit 等平台的 ${productName} 真實評價與優缺點分析。`;
+  const productName = fromSlug(slug);
 
   return {
-    title,
-    description,
-
+    title: `${productName} 評價總整理｜PulsePick`,
+    description: `PulsePick 使用 AI 整理 YouTube、PTT、Dcard、Reddit、Mobile01 等平台的 ${productName} 真實評價、優缺點與購買建議。`,
     openGraph: {
-      title,
-      description,
+      title: `${productName} 評價總整理｜PulsePick`,
+      description: `AI 整理 ${productName} 的全網評價與真實口碑。`,
       type: "website",
-    },
-
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
     },
   };
 }
 
-export default async function Page(
-  { params }: Props
-) {
-
+export default async function Page({ params }: Props) {
   const { slug } = await params;
-
-  return (
-    <ReviewClient slug={slug} />
-  );
+  return <ReviewClient slug={slug} />;
 }

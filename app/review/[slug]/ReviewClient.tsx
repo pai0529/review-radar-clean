@@ -102,7 +102,7 @@ export default function ReviewClient({
           </h1>
 
           <p className="mt-4 max-w-2xl text-zinc-400">
-            ReviewRadar 會自動搜尋相關 YouTube 評測影片與留言，並用 AI 整理出較客觀的口碑分析。
+            PulsePick 會自動搜尋相關 YouTube 評測影片與留言，並用 AI 整理出較客觀的口碑分析。
           </p>
         </div>
 
