@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from youtube_service import collect_youtube_reviews
 from reddit_service import collect_reddit_reviews
 from dcard_service import collect_dcard_reviews
+from tavily_service import search_web_reviews
 
 import os
 import json
@@ -110,6 +111,19 @@ def analyze_reviews(data: ReviewRequest):
     ]
 
     print("dcard comments:", len(dcard_comments))
+     # =========================
+    # Tavily Search
+    # =========================
+    tavily_results = search_web_reviews(
+        data.product_name
+    )
+
+    tavily_texts = [
+        f"{item['title']}：{item['content']}"
+        for item in tavily_results
+    ]
+
+    print("tavily results:", len(tavily_results))
 
     # =========================
     # 合併所有評論
@@ -119,6 +133,7 @@ def analyze_reviews(data: ReviewRequest):
         + youtube_texts
         + reddit_texts
         + dcard_texts
+        + tavily_texts
     )
 
     reviews_text = "\n".join(all_reviews)
@@ -204,5 +219,8 @@ JSON 格式如下：
         "dcard_comments_count": len(dcard_comments),
         "dcard_posts": dcard_data["posts"],
 
+        "tavily_results_count": len(tavily_results),
+        "tavily_results": tavily_results,
         "analysis": analysis
+
     }
