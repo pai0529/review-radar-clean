@@ -24,15 +24,9 @@ app = FastAPI(
     title="PulsePick API"
 )
 
-# =========================
-# Cache Folder
-# =========================
 CACHE_DIR = Path("cache")
 CACHE_DIR.mkdir(exist_ok=True)
 
-# =========================
-# CORS
-# =========================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -41,45 +35,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# =========================
-# Health Check
-# =========================
 @app.get("/health")
 def health():
     return {
         "status": "ok"
     }
 
-# =========================
-# Debug
-# =========================
 @app.get("/debug-version")
 def debug_version():
     return {
-        "version": "pulsepick-cache-system",
+        "version": "pulsepick-cache-status-system",
         "analyze_type": "json_body"
     }
 
-# =========================
-# Request Model
-# =========================
 class ReviewRequest(BaseModel):
     product_name: str
     reviews: List[str]
     youtube_url: str = ""
 
-# =========================
-# Analyze API
-# =========================
 @app.post("/analyze")
 def analyze_reviews(data: ReviewRequest):
 
     print("analyze endpoint hit")
     print(data)
 
-    # =========================
-    # Cache Slug
-    # =========================
     slug = (
         data.product_name
         .lower()
@@ -88,9 +67,6 @@ def analyze_reviews(data: ReviewRequest):
 
     cache_file = CACHE_DIR / f"{slug}.json"
 
-    # =========================
-    # Cache Hit
-    # =========================
     if cache_file.exists():
 
         print("cache hit:", slug)
@@ -101,13 +77,13 @@ def analyze_reviews(data: ReviewRequest):
             encoding="utf-8"
         ) as f:
 
-            return json.load(f)
+            cached_data = json.load(f)
+            cached_data["cached"] = True
+
+            return cached_data
 
     print("cache miss:", slug)
 
-    # =========================
-    # YouTube
-    # =========================
     youtube_data = collect_youtube_reviews(
         data.product_name,
         max_videos=3,
@@ -123,9 +99,6 @@ def analyze_reviews(data: ReviewRequest):
 
     print("youtube comments:", len(youtube_comments))
 
-    # =========================
-    # Reddit
-    # =========================
     reddit_data = collect_reddit_reviews(
         data.product_name,
         limit=5
@@ -140,9 +113,6 @@ def analyze_reviews(data: ReviewRequest):
 
     print("reddit comments:", len(reddit_comments))
 
-    # =========================
-    # Dcard
-    # =========================
     dcard_data = collect_dcard_reviews(
         data.product_name,
         limit=5
@@ -157,9 +127,6 @@ def analyze_reviews(data: ReviewRequest):
 
     print("dcard comments:", len(dcard_comments))
 
-    # =========================
-    # Tavily Search
-    # =========================
     tavily_results = search_web_reviews(
         data.product_name
     )
@@ -171,9 +138,6 @@ def analyze_reviews(data: ReviewRequest):
 
     print("tavily results:", len(tavily_results))
 
-    # =========================
-    # Combine Reviews
-    # =========================
     all_reviews = (
         data.reviews
         + youtube_texts
@@ -184,9 +148,6 @@ def analyze_reviews(data: ReviewRequest):
 
     reviews_text = "\n".join(all_reviews)
 
-    # =========================
-    # AI Prompt
-    # =========================
     prompt = f"""
 你是一個專業商品與 App 評論分析 AI。
 
@@ -212,9 +173,6 @@ JSON 格式如下：
 }}
 """
 
-    # =========================
-    # OpenAI Analysis
-    # =========================
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -230,9 +188,6 @@ JSON 格式如下：
 
     content = response.choices[0].message.content
 
-    # =========================
-    # JSON Parse
-    # =========================
     try:
         analysis = json.loads(content)
 
@@ -248,9 +203,6 @@ JSON 格式如下：
             "confidence": "低"
         }
 
-    # =========================
-    # Final Result
-    # =========================
     result = {
         "product_name": data.product_name,
 
@@ -268,12 +220,11 @@ JSON 格式如下：
         "tavily_results_count": len(tavily_results),
         "tavily_results": tavily_results,
 
-        "analysis": analysis
+        "analysis": analysis,
+
+        "cached": False
     }
 
-    # =========================
-    # Save Cache
-    # =========================
     with open(
         cache_file,
         "w",
