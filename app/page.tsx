@@ -22,18 +22,28 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-black px-6 text-white">
-      <section className="w-full max-w-3xl text-center">
+      <section className="w-full max-w-4xl text-center">
+
+        {/* Badge */}
         <div className="mb-4 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-300">
           AI 商品口碑搜尋引擎
         </div>
 
-        <h1 className="text-5xl font-bold md:text-7xl">PulsePick</h1>
+        {/* Title */}
+        <h1 className="text-5xl font-bold md:text-7xl">
+          PulsePick
+        </h1>
 
+        {/* Description */}
         <p className="mx-auto mt-5 max-w-2xl text-zinc-400">
-          搜尋你想了解的商品或 App，AI 會整理多個平台的評論，產生客觀評分、優缺點與購買建議。
+          搜尋你想了解的商品或 App，
+          AI 會整理多個平台的評論，
+          產生客觀評分、優缺點與購買建議。
         </p>
 
+        {/* Search Box */}
         <div className="mt-8 flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/10 p-4 backdrop-blur md:flex-row">
+
           <input
             className="flex-1 rounded-2xl bg-black/40 p-4 text-white outline-none placeholder:text-zinc-500"
             placeholder="例如：Nike Air Force 1、ChatGPT Plus、iPhone"
@@ -46,11 +56,52 @@ export default function Home() {
 
           <button
             onClick={handleSearch}
-            className="rounded-2xl bg-white px-8 py-4 font-bold text-black hover:bg-zinc-200"
+            className="rounded-2xl bg-white px-8 py-4 font-bold text-black transition hover:bg-zinc-200"
           >
             搜尋評價
           </button>
         </div>
+
+        {/* Categories */}
+        <div className="mt-10">
+
+          <p className="mb-4 text-sm text-zinc-500">
+            熱門分類
+          </p>
+
+          <div className="flex flex-wrap justify-center gap-3">
+
+            <a
+              href="/category/ai-tools"
+              className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black"
+            >
+              AI Tools
+            </a>
+
+            <a
+              href="/category/smartphones"
+              className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black"
+            >
+              Smartphones
+            </a>
+
+            <a
+              href="/category/apps"
+              className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black"
+            >
+              Apps
+            </a>
+
+            <a
+              href="/category/gaming"
+              className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black"
+            >
+              Gaming
+            </a>
+
+          </div>
+        </div>
+
       </section>
     </main>
   );
