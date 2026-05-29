@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import List
 from openai import OpenAI
 from dotenv import load_dotenv
+from pathlib import Path
 
 from youtube_service import collect_youtube_reviews
 from reddit_service import collect_reddit_reviews
@@ -20,10 +21,18 @@ client = OpenAI(
 )
 
 app = FastAPI(
-    title="Review Radar API"
+    title="PulsePick API"
 )
 
+# =========================
+# Cache Folder
+# =========================
+CACHE_DIR = Path("cache")
+CACHE_DIR.mkdir(exist_ok=True)
+
+# =========================
 # CORS
+# =========================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,33 +41,69 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 健康檢查
+# =========================
+# Health Check
+# =========================
 @app.get("/health")
 def health():
     return {
         "status": "ok"
     }
 
+# =========================
 # Debug
+# =========================
 @app.get("/debug-version")
 def debug_version():
     return {
-        "version": "youtube-reddit-dcard-api-no-google",
+        "version": "pulsepick-cache-system",
         "analyze_type": "json_body"
     }
 
+# =========================
 # Request Model
+# =========================
 class ReviewRequest(BaseModel):
     product_name: str
     reviews: List[str]
     youtube_url: str = ""
 
-# 分析 API
+# =========================
+# Analyze API
+# =========================
 @app.post("/analyze")
 def analyze_reviews(data: ReviewRequest):
 
     print("analyze endpoint hit")
     print(data)
+
+    # =========================
+    # Cache Slug
+    # =========================
+    slug = (
+        data.product_name
+        .lower()
+        .replace(" ", "-")
+    )
+
+    cache_file = CACHE_DIR / f"{slug}.json"
+
+    # =========================
+    # Cache Hit
+    # =========================
+    if cache_file.exists():
+
+        print("cache hit:", slug)
+
+        with open(
+            cache_file,
+            "r",
+            encoding="utf-8"
+        ) as f:
+
+            return json.load(f)
+
+    print("cache miss:", slug)
 
     # =========================
     # YouTube
@@ -111,7 +156,8 @@ def analyze_reviews(data: ReviewRequest):
     ]
 
     print("dcard comments:", len(dcard_comments))
-     # =========================
+
+    # =========================
     # Tavily Search
     # =========================
     tavily_results = search_web_reviews(
@@ -126,7 +172,7 @@ def analyze_reviews(data: ReviewRequest):
     print("tavily results:", len(tavily_results))
 
     # =========================
-    # 合併所有評論
+    # Combine Reviews
     # =========================
     all_reviews = (
         data.reviews
@@ -167,7 +213,7 @@ JSON 格式如下：
 """
 
     # =========================
-    # OpenAI 分析
+    # OpenAI Analysis
     # =========================
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -185,7 +231,7 @@ JSON 格式如下：
     content = response.choices[0].message.content
 
     # =========================
-    # JSON 解析
+    # JSON Parse
     # =========================
     try:
         analysis = json.loads(content)
@@ -203,9 +249,9 @@ JSON 格式如下：
         }
 
     # =========================
-    # 回傳結果
+    # Final Result
     # =========================
-    return {
+    result = {
         "product_name": data.product_name,
 
         "manual_reviews_count": len(data.reviews),
@@ -221,6 +267,24 @@ JSON 格式如下：
 
         "tavily_results_count": len(tavily_results),
         "tavily_results": tavily_results,
-        "analysis": analysis
 
+        "analysis": analysis
     }
+
+    # =========================
+    # Save Cache
+    # =========================
+    with open(
+        cache_file,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        json.dump(
+            result,
+            f,
+            ensure_ascii=False,
+            indent=2
+        )
+
+    return result
