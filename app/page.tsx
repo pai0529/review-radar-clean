@@ -79,25 +79,20 @@ export default function Home() {
             </a>
 
             <a
-              href="/category/smartphones"
+              href="/category/3c"
               className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black"
             >
-              Smartphones
+              3c
             </a>
 
             <a
-              href="/category/apps"
+              href="/category/Apps"
               className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black"
             >
               Apps
             </a>
 
-            <a
-              href="/category/gaming"
-              className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black"
-            >
-              Gaming
-            </a>
+            
 
           </div>
         </div>
