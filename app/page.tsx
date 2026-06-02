@@ -91,7 +91,12 @@ export default function Home() {
             >
               Apps
           </a>
-
+            <a
+              href="/category/restaurants"
+              className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black"
+            >
+              Restaurants
+          </a>
             
 
           </div>
