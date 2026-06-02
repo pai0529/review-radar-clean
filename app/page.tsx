@@ -82,15 +82,15 @@ export default function Home() {
               href="/category/3c"
               className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black"
             >
-              3c
+              3C
             </a>
 
-            <a
-              href="/category/Apps"
+           <a
+              href="/category/apps"
               className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black"
             >
               Apps
-            </a>
+          </a>
 
             
 
