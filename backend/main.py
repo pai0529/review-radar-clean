@@ -5,6 +5,7 @@ from typing import List
 from openai import OpenAI
 from dotenv import load_dotenv
 from pathlib import Path
+from urllib.parse import quote
 
 from youtube_service import collect_youtube_reviews
 from reddit_service import collect_reddit_reviews
@@ -16,13 +17,9 @@ import json
 
 load_dotenv()
 
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
-)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-app = FastAPI(
-    title="PulsePick API"
-)
+app = FastAPI(title="PulsePick API")
 
 CACHE_DIR = Path("cache")
 CACHE_DIR.mkdir(exist_ok=True)
@@ -37,16 +34,63 @@ app.add_middleware(
 
 @app.get("/health")
 def health():
-    return {
-        "status": "ok"
-    }
+    return {"status": "ok"}
 
 @app.get("/debug-version")
 def debug_version():
     return {
-        "version": "pulsepick-cache-status-system",
+        "version": "pulsepick-brand-logo-layout",
         "analyze_type": "json_body"
     }
+
+def get_brand_image(product_name: str):
+    name = product_name.lower()
+
+    brand_domains = {
+        "chatgpt": "openai.com",
+        "claude": "anthropic.com",
+        "gemini": "google.com",
+        "notion": "notion.so",
+        "cursor": "cursor.com",
+
+        "iphone": "apple.com",
+        "galaxy": "samsung.com",
+        "rog": "asus.com",
+        "pixel": "google.com",
+        "xiaomi": "mi.com",
+
+        "steam deck": "steampowered.com",
+        "nintendo": "nintendo.com",
+        "ps5": "playstation.com",
+        "xbox": "xbox.com",
+
+        "tiktok": "tiktok.com",
+        "instagram": "instagram.com",
+        "discord": "discord.com",
+        "spotify": "spotify.com",
+        "netflix": "netflix.com",
+
+        "mcdonald": "mcdonalds.com",
+        "kfc": "kfc.com",
+        "din tai fung": "dintaifung.com.tw",
+        "鼎泰豐": "dintaifung.com.tw",
+        "haidilao": "haidilao.com",
+        "海底撈": "haidilao.com",
+        "kura": "kurasushi.com",
+        "藏壽司": "kurasushi.com",
+    }
+
+    for key, domain in brand_domains.items():
+        if key in name:
+            return f"https://logo.clearbit.com/{domain}"
+
+    return (
+        "https://ui-avatars.com/api/"
+        f"?name={quote(product_name)}"
+        "&background=111827"
+        "&color=ffffff"
+        "&size=512"
+    )
 
 class ReviewRequest(BaseModel):
     product_name: str
@@ -55,34 +99,23 @@ class ReviewRequest(BaseModel):
 
 @app.post("/analyze")
 def analyze_reviews(data: ReviewRequest):
-
     print("analyze endpoint hit")
     print(data)
 
-    slug = (
-        data.product_name
-        .lower()
-        .replace(" ", "-")
-    )
-
+    slug = data.product_name.lower().replace(" ", "-")
     cache_file = CACHE_DIR / f"{slug}.json"
 
     if cache_file.exists():
-
         print("cache hit:", slug)
 
-        with open(
-            cache_file,
-            "r",
-            encoding="utf-8"
-        ) as f:
-
+        with open(cache_file, "r", encoding="utf-8") as f:
             cached_data = json.load(f)
             cached_data["cached"] = True
-
             return cached_data
 
     print("cache miss:", slug)
+
+    image_url = get_brand_image(data.product_name)
 
     youtube_data = collect_youtube_reviews(
         data.product_name,
@@ -91,11 +124,7 @@ def analyze_reviews(data: ReviewRequest):
     )
 
     youtube_comments = youtube_data["comments"]
-
-    youtube_texts = [
-        comment["text"]
-        for comment in youtube_comments
-    ]
+    youtube_texts = [comment["text"] for comment in youtube_comments]
 
     print("youtube comments:", len(youtube_comments))
 
@@ -105,11 +134,7 @@ def analyze_reviews(data: ReviewRequest):
     )
 
     reddit_comments = reddit_data["comments"]
-
-    reddit_texts = [
-        comment["text"]
-        for comment in reddit_comments
-    ]
+    reddit_texts = [comment["text"] for comment in reddit_comments]
 
     print("reddit comments:", len(reddit_comments))
 
@@ -119,22 +144,17 @@ def analyze_reviews(data: ReviewRequest):
     )
 
     dcard_comments = dcard_data["comments"]
-
-    dcard_texts = [
-        comment["text"]
-        for comment in dcard_comments
-    ]
+    dcard_texts = [comment["text"] for comment in dcard_comments]
 
     print("dcard comments:", len(dcard_comments))
 
     tavily_data = search_web_reviews(data.product_name)
 
-    tavily_results = tavily_data["results"]
-    image_url = tavily_data["image_url"]
+    tavily_results = tavily_data["results"] if isinstance(tavily_data, dict) else tavily_data
 
     tavily_texts = [
-    f"{item['title']}：{item['content']}"
-    for item in tavily_results
+        f"{item['title']}：{item['content']}"
+        for item in tavily_results
     ]
 
     print("tavily results:", len(tavily_results))
@@ -208,7 +228,7 @@ JSON 格式如下：
     result = {
         "product_name": data.product_name,
         "image_url": image_url,
-        
+
         "manual_reviews_count": len(data.reviews),
 
         "youtube_comments_count": len(youtube_comments),
@@ -224,21 +244,10 @@ JSON 格式如下：
         "tavily_results": tavily_results,
 
         "analysis": analysis,
-
         "cached": False
     }
 
-    with open(
-        cache_file,
-        "w",
-        encoding="utf-8"
-    ) as f:
-
-        json.dump(
-            result,
-            f,
-            ensure_ascii=False,
-            indent=2
-        )
+    with open(cache_file, "w", encoding="utf-8") as f:
+        json.dump(result, f, ensure_ascii=False, indent=2)
 
     return result

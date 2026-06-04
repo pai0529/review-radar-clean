@@ -17,18 +17,13 @@ function fromSlug(slug: string) {
   return decodeURIComponent(slug).replace(/-/g, " ");
 }
 
-export default function ReviewClient({
-  slug,
-}: {
-  slug: string;
-}) {
+export default function ReviewClient({ slug }: { slug: string }) {
   const productName = fromSlug(slug);
 
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [imageUrl, setImageUrl] = useState("");
   const [youtubeCount, setYoutubeCount] = useState(0);
   const [tavilyCount, setTavilyCount] = useState(0);
-
   const [cached, setCached] = useState(false);
   const [loading, setLoading] = useState(true);
   const [statusText, setStatusText] = useState("正在搜尋多平台評價...");
@@ -105,16 +100,6 @@ export default function ReviewClient({
           </p>
         </div>
 
-        {imageUrl && (
-          <div className="mt-8 overflow-hidden rounded-3xl border border-white/10 bg-white/10">
-            <img
-              src={imageUrl}
-              alt={productName}
-              className="h-80 w-full object-cover"
-            />
-          </div>
-        )}
-
         {loading && (
           <div className="mt-8 rounded-3xl border border-white/10 bg-white/10 p-6">
             <p className="mb-4 text-zinc-300">{statusText}</p>
@@ -132,6 +117,50 @@ export default function ReviewClient({
 
         {analysis && (
           <>
+            <section className="mt-8 grid gap-6 rounded-3xl border border-white/10 bg-white/10 p-6 backdrop-blur md:grid-cols-[220px_1fr]">
+              <div className="flex h-56 items-center justify-center rounded-3xl bg-white p-8">
+                {imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt={productName}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                ) : (
+                  <div className="flex h-32 w-32 items-center justify-center rounded-3xl bg-black text-5xl font-bold text-white">
+                    {productName.slice(0, 1).toUpperCase()}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col justify-center text-left">
+                <p className="text-sm text-zinc-400">
+                  PulsePick AI Review
+                </p>
+
+                <h2 className="mt-2 text-3xl font-bold md:text-5xl">
+                  {productName}
+                </h2>
+
+                <p className="mt-4 max-w-2xl leading-7 text-zinc-400">
+                  AI 會整理 YouTube 與多平台搜尋結果，分析這個項目的整體口碑、優缺點與使用建議。
+                </p>
+
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-black">
+                    {cached ? "已快取結果" : "即時分析"}
+                  </span>
+
+                  <span className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">
+                    {tavilyCount} 筆網路結果
+                  </span>
+
+                  <span className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">
+                    {youtubeCount} 則 YouTube 留言
+                  </span>
+                </div>
+              </div>
+            </section>
+
             <section className="mt-8 grid gap-6 lg:grid-cols-3">
               <div className="rounded-3xl bg-white p-6 text-black shadow-2xl">
                 <p className="text-sm font-medium text-zinc-500">整體評分</p>
@@ -159,13 +188,6 @@ export default function ReviewClient({
                 <div className="mt-4 rounded-2xl bg-black p-4 text-white">
                   <p className="text-sm text-zinc-400">可信度</p>
                   <p className="text-xl font-bold">{analysis.confidence}</p>
-                </div>
-
-                <div className="mt-4 rounded-2xl bg-zinc-100 p-4">
-                  <p className="text-sm text-zinc-500">資料狀態</p>
-                  <p className="mt-1 font-bold">
-                    {cached ? "快速結果（已快取）" : "即時 AI 分析"}
-                  </p>
                 </div>
               </div>
 
@@ -196,7 +218,7 @@ export default function ReviewClient({
                 <h2 className="text-2xl font-bold">本次分析資料來源</h2>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 <SourceCard title="YouTube 留言" count={youtubeCount} />
                 <SourceCard title="網路搜尋結果" count={tavilyCount} />
               </div>
