@@ -28,8 +28,7 @@ export default function ReviewClient({
   const [imageUrl, setImageUrl] = useState("");
   const [youtubeCount, setYoutubeCount] = useState(0);
   const [tavilyCount, setTavilyCount] = useState(0);
-  const [redditCount, setRedditCount] = useState(0);
-  const [dcardCount, setDcardCount] = useState(0);
+
   const [cached, setCached] = useState(false);
   const [loading, setLoading] = useState(true);
   const [statusText, setStatusText] = useState("正在搜尋多平台評價...");
@@ -68,8 +67,6 @@ export default function ReviewClient({
         setImageUrl(data.image_url || "");
         setYoutubeCount(data.youtube_comments_count || 0);
         setTavilyCount(data.tavily_results_count || 0);
-        setRedditCount(data.reddit_comments_count || 0);
-        setDcardCount(data.dcard_comments_count || 0);
         setCached(data.cached || false);
       } catch {
         setError("連線失敗，請確認後端 FastAPI 是否有開啟。");
@@ -202,8 +199,6 @@ export default function ReviewClient({
               <div className="grid gap-4 md:grid-cols-4">
                 <SourceCard title="YouTube 留言" count={youtubeCount} />
                 <SourceCard title="網路搜尋結果" count={tavilyCount} />
-                <SourceCard title="Reddit 留言" count={redditCount} />
-                <SourceCard title="Dcard 留言" count={dcardCount} />
               </div>
             </section>
           </>
