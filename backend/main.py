@@ -127,16 +127,18 @@ def analyze_reviews(data: ReviewRequest):
 
     print("dcard comments:", len(dcard_comments))
 
-    tavily_results = search_web_reviews(
-        data.product_name
-    )
+    tavily_data = search_web_reviews(data.product_name)
+
+    tavily_results = tavily_data["results"]
+    image_url = tavily_data["image_url"]
 
     tavily_texts = [
-        f"{item['title']}：{item['content']}"
-        for item in tavily_results
+    f"{item['title']}：{item['content']}"
+    for item in tavily_results
     ]
 
     print("tavily results:", len(tavily_results))
+    print("image url:", image_url)
 
     all_reviews = (
         data.reviews
@@ -205,7 +207,8 @@ JSON 格式如下：
 
     result = {
         "product_name": data.product_name,
-
+        "image_url": image_url,
+        
         "manual_reviews_count": len(data.reviews),
 
         "youtube_comments_count": len(youtube_comments),

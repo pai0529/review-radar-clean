@@ -13,13 +13,6 @@ type Analysis = {
   confidence: string;
 };
 
-type YoutubeVideo = {
-  video_id: string;
-  title: string;
-  channel: string;
-  url: string;
-};
-
 function fromSlug(slug: string) {
   return decodeURIComponent(slug).replace(/-/g, " ");
 }
@@ -32,19 +25,23 @@ export default function ReviewClient({
   const productName = fromSlug(slug);
 
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
-  const [youtubeVideos, setYoutubeVideos] = useState<YoutubeVideo[]>([]);
+  const [imageUrl, setImageUrl] = useState("");
   const [youtubeCount, setYoutubeCount] = useState(0);
+  const [tavilyCount, setTavilyCount] = useState(0);
+  const [redditCount, setRedditCount] = useState(0);
+  const [dcardCount, setDcardCount] = useState(0);
+  const [cached, setCached] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [statusText, setStatusText] = useState("正在搜尋多部 YouTube 評測影片...");
+  const [statusText, setStatusText] = useState("正在搜尋多平台評價...");
   const [error, setError] = useState("");
 
   useEffect(() => {
     async function runAnalysis() {
       setLoading(true);
       setError("");
-      setStatusText("正在搜尋多部 YouTube 評測影片...");
+      setStatusText("正在搜尋多平台評價...");
 
-      setTimeout(() => setStatusText("正在抓取影片留言..."), 1200);
+      setTimeout(() => setStatusText("正在整理 YouTube 與網路討論..."), 1200);
       setTimeout(() => setStatusText("正在交給 AI 分析評論..."), 2400);
 
       try {
@@ -68,8 +65,12 @@ export default function ReviewClient({
         }
 
         setAnalysis(data.analysis);
-        setYoutubeVideos(data.youtube_videos || []);
+        setImageUrl(data.image_url || "");
         setYoutubeCount(data.youtube_comments_count || 0);
+        setTavilyCount(data.tavily_results_count || 0);
+        setRedditCount(data.reddit_comments_count || 0);
+        setDcardCount(data.dcard_comments_count || 0);
+        setCached(data.cached || false);
       } catch {
         setError("連線失敗，請確認後端 FastAPI 是否有開啟。");
       } finally {
@@ -102,9 +103,20 @@ export default function ReviewClient({
           </h1>
 
           <p className="mt-4 max-w-2xl text-zinc-400">
-            PulsePick 會自動搜尋相關 YouTube 評測影片與留言，並用 AI 整理出較客觀的口碑分析。
+            PulsePick 會自動整理 YouTube、PTT、Dcard、Reddit、Mobile01 等平台的討論，
+            並用 AI 產生較客觀的口碑分析。
           </p>
         </div>
+
+        {imageUrl && (
+          <div className="mt-8 overflow-hidden rounded-3xl border border-white/10 bg-white/10">
+            <img
+              src={imageUrl}
+              alt={productName}
+              className="h-80 w-full object-cover"
+            />
+          </div>
+        )}
 
         {loading && (
           <div className="mt-8 rounded-3xl border border-white/10 bg-white/10 p-6">
@@ -151,6 +163,13 @@ export default function ReviewClient({
                   <p className="text-sm text-zinc-400">可信度</p>
                   <p className="text-xl font-bold">{analysis.confidence}</p>
                 </div>
+
+                <div className="mt-4 rounded-2xl bg-zinc-100 p-4">
+                  <p className="text-sm text-zinc-500">資料狀態</p>
+                  <p className="mt-1 font-bold">
+                    {cached ? "快速結果（已快取）" : "即時 AI 分析"}
+                  </p>
+                </div>
               </div>
 
               <div className="rounded-3xl bg-white p-6 text-black shadow-2xl lg:col-span-2">
@@ -173,39 +192,18 @@ export default function ReviewClient({
             </section>
 
             <section className="mt-8 rounded-3xl bg-white p-6 text-black shadow-2xl">
-              <div className="mb-5 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-zinc-500">
-                    Data Sources
-                  </p>
-                  <h2 className="text-2xl font-bold">分析來源影片</h2>
-                </div>
-
-                <div className="rounded-full bg-black px-4 py-2 text-sm font-bold text-white">
-                  {youtubeVideos.length} 部影片 / {youtubeCount} 則留言
-                </div>
+              <div className="mb-5">
+                <p className="text-sm font-medium text-zinc-500">
+                  Data Sources
+                </p>
+                <h2 className="text-2xl font-bold">本次分析資料來源</h2>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
-                {youtubeVideos.map((video, index) => (
-                  <a
-                    key={video.video_id}
-                    href={video.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block rounded-2xl bg-zinc-100 p-5 transition hover:bg-zinc-200"
-                  >
-                    <div className="mb-3 inline-flex rounded-full bg-black px-3 py-1 text-xs font-bold text-white">
-                      Source {index + 1}
-                    </div>
-
-                    <p className="line-clamp-3 font-bold">{video.title}</p>
-                    <p className="mt-3 text-sm text-zinc-500">{video.channel}</p>
-                    <p className="mt-4 text-sm font-medium text-zinc-700">
-                      開啟 YouTube →
-                    </p>
-                  </a>
-                ))}
+              <div className="grid gap-4 md:grid-cols-4">
+                <SourceCard title="YouTube 留言" count={youtubeCount} />
+                <SourceCard title="網路搜尋結果" count={tavilyCount} />
+                <SourceCard title="Reddit 留言" count={redditCount} />
+                <SourceCard title="Dcard 留言" count={dcardCount} />
               </div>
             </section>
           </>
@@ -228,9 +226,21 @@ function InfoCard({ title, items }: { title: string; items: string[] }) {
             </li>
           ))
         ) : (
-          <li className="rounded-xl bg-white p-3 text-zinc-400">尚無資料</li>
+          <li className="rounded-xl bg-white p-3 text-zinc-400">
+            尚無資料
+          </li>
         )}
       </ul>
+    </div>
+  );
+}
+
+function SourceCard({ title, count }: { title: string; count: number }) {
+  return (
+    <div className="rounded-2xl bg-zinc-100 p-5">
+      <p className="text-sm text-zinc-500">{title}</p>
+      <p className="mt-2 text-3xl font-bold">{count}</p>
+      <p className="mt-1 text-xs text-zinc-400">筆資料</p>
     </div>
   );
 }

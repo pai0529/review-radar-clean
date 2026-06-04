@@ -6,50 +6,54 @@ load_dotenv()
 
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
-def search_web_reviews(product_name):
 
+def search_web_reviews(product_name):
     queries = [
-        f"{product_name} 評價 site:dcard.tw",
-        f"{product_name} 心得 site:ptt.cc",
-        f"{product_name} review site:reddit.com",
-        f"{product_name} 評測 site:mobile01.com"
+        f"{product_name} 評價 心得 優缺點",
+        f"{product_name} PTT Dcard Mobile01 評價",
+        f"{product_name} review pros cons",
     ]
 
     all_results = []
+    image_url = ""
 
     for query in queries:
-
         try:
-
             response = requests.post(
                 "https://api.tavily.com/search",
                 json={
                     "api_key": TAVILY_API_KEY,
                     "query": query,
                     "search_depth": "basic",
-                    "max_results": 5
+                    "max_results": 5,
+                    "include_images": True,
                 },
-                timeout=15
+                timeout=15,
             )
 
             if response.status_code != 200:
-                print("Tavily failed:", response.status_code)
+                print("Tavily failed:", response.status_code, response.text[:200])
                 continue
 
             data = response.json()
 
-            results = data.get("results", [])
+            if not image_url:
+                images = data.get("images", [])
+                if images:
+                    image_url = images[0]
 
-            for item in results:
-
+            for item in data.get("results", []):
                 all_results.append({
                     "title": item.get("title", ""),
                     "content": item.get("content", ""),
                     "url": item.get("url", ""),
-                    "query": query
+                    "query": query,
                 })
 
         except Exception as e:
             print("Tavily error:", e)
 
-    return all_results
+    return {
+        "results": all_results,
+        "image_url": image_url
+    }
