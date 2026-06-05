@@ -14,6 +14,7 @@ from tavily_service import search_web_reviews
 
 import os
 import json
+import redis as redis_lib
 
 load_dotenv()
 
@@ -21,8 +22,31 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = FastAPI(title="PulsePick API")
 
+REDIS_URL = os.getenv("REDIS_URL")
+redis_client = redis_lib.from_url(REDIS_URL) if REDIS_URL else None
+
 CACHE_DIR = Path("cache")
 CACHE_DIR.mkdir(exist_ok=True)
+
+def cache_get(slug: str):
+    if redis_client:
+        data = redis_client.get(f"pulsepick:{slug}")
+        return json.loads(data) if data else None
+    # fallback: 本地檔案
+    cache_file = CACHE_DIR / f"{slug}.json"
+    if cache_file.exists():
+        with open(cache_file, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return None
+
+def cache_set(slug: str, result: dict):
+    if redis_client:
+        redis_client.set(f"pulsepick:{slug}", json.dumps(result, ensure_ascii=False))
+    else:
+        # fallback: 本地檔案
+        cache_file = CACHE_DIR / f"{slug}.json"
+        with open(cache_file, "w", encoding="utf-8") as f:
+            json.dump(result, f, ensure_ascii=False, indent=2)
 
 app.add_middleware(
     CORSMiddleware,
@@ -45,26 +69,6 @@ def debug_version():
 
 def get_brand_image(product_name: str):
     name = product_name.lower()
-
-    product_images = {
-        "iphone 15": "https://store.storeimages.cdn-apple.com/8756/as-images.apple.com/is/iphone-15-finish-select-202309-6-1inch-pink?wid=512&hei=512&fmt=png-alpha&.v=1692923780378",
-        "galaxy s24": "https://images.samsung.com/is/image/samsung/p6pim/tw/sm-s9210zyebri/gallery/tw-galaxy-s24-s921-sm-s9210zyebri-thumb-539359471?$344_344_PNG$",
-        "rog phone": "https://dlcdnwebimgs.asus.com/gain/43F7F26E-5F73-4A88-A5F0-3B5F13F5EF84/w717/h525",
-        "google pixel 9": "https://lh3.googleusercontent.com/9zw3E-rqQHHy5PlEEJTEd6GlnWl6cR-7FTxxlSnrCUQO2S4t2vvgVCmniqVD61RGx_4FfBX2eW8ZmQ0JZtuw",
-        "pixel 9": "https://lh3.googleusercontent.com/9zw3E-rqQHHy5PlEEJTEd6GlnWl6cR-7FTxxlSnrCUQO2S4t2vvgVCmniqVD61RGx_4FfBX2eW8ZmQ0JZtuw",
-        "xiaomi 14": "https://i02.appmifile.com/mi-com-product/fly-birds/xiaomi-14/pc/section01-phone.png",
-        "steam deck": "https://cdn.cloudflare.steamstatic.com/steamdeck/images/steamdeck_hero.png",
-        "ps5": "https://gmedia.playstation.com/is/image/SIEPDC/ps5-product-thumbnail-01-en-14sep21?$facebook$",
-        "xbox series x": "https://assets.xboxservices.com/assets/c9/6c/c96c05ca-6d69-4d18-879a-9425d41a7215.png?n=642227_Hero-Gallery-0_A1_857x676.png",
-        "nintendo switch 2": "https://assets.nintendo.com/image/upload/f_auto/q_auto/dpr_1.5/c_scale,w_500/ncom/My%20Nintendo%20Store/EN-US/Hardware/nintendo-switch-2/110693-nintendo-switch-2/110693-nintendo-switch-2-package-1200x675",
-    }
-
-    for key, url in product_images.items():
-        if key in name:
-            return {
-                "image_url": url,
-                "image_type": "product"
-            }
 
     brand_domains = {
         "chatgpt": "openai.com",
@@ -125,15 +129,12 @@ def analyze_reviews(data: ReviewRequest):
     print(data)
 
     slug = data.product_name.lower().replace(" ", "-")
-    cache_file = CACHE_DIR / f"{slug}.json"
 
-    if cache_file.exists():
+    cached_data = cache_get(slug)
+    if cached_data:
         print("cache hit:", slug)
-
-        with open(cache_file, "r", encoding="utf-8") as f:
-            cached_data = json.load(f)
-            cached_data["cached"] = True
-            return cached_data
+        cached_data["cached"] = True
+        return cached_data
 
     print("cache miss:", slug)
 
@@ -174,11 +175,17 @@ def analyze_reviews(data: ReviewRequest):
 
     tavily_data = search_web_reviews(data.product_name)
     tavily_results = tavily_data["results"] if isinstance(tavily_data, dict) else tavily_data
+    tavily_image_url = tavily_data.get("image_url", "") if isinstance(tavily_data, dict) else ""
 
     tavily_texts = [
         f"{item['title']}：{item['content']}"
         for item in tavily_results
     ]
+
+    # 如果 get_brand_image 只找到 fallback，改用 Tavily 搜到的圖片
+    if image_type == "fallback" and tavily_image_url:
+        image_url = tavily_image_url
+        image_type = "product"
 
     print("tavily results:", len(tavily_results))
     print("image url:", image_url)
@@ -272,7 +279,6 @@ JSON 格式如下：
         "cached": False
     }
 
-    with open(cache_file, "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
+    cache_set(slug, result)
 
     return result
