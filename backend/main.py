@@ -11,6 +11,7 @@ from youtube_service import collect_youtube_reviews
 from reddit_service import collect_reddit_reviews
 from dcard_service import collect_dcard_reviews
 from tavily_service import search_web_reviews
+from image_service import get_best_image, get_wikipedia_image
 
 import os
 import json
@@ -134,9 +135,9 @@ def analyze_reviews(data: ReviewRequest):
 
     print("cache miss:", slug)
 
-    image_data = get_brand_image(data.product_name)
-    image_url = image_data["image_url"]
-    image_type = image_data["image_type"]
+    # app 品牌（社群/工具類）直接用 Google favicon，不需要搜尋
+    brand_data = get_brand_image(data.product_name)
+    is_app_brand = brand_data["image_type"] == "app_logo"
 
     youtube_data = collect_youtube_reviews(
         data.product_name,
@@ -178,17 +179,14 @@ def analyze_reviews(data: ReviewRequest):
         for item in tavily_results
     ]
 
-    # app_logo 類（Instagram、TikTok 等）固定用 Clearbit logo，不被 Tavily 隨機圖覆蓋
-    # 其他類（實體商品、餐廳、遊戲）優先用 Tavily 搜到的圖
-    if image_data["image_type"] == "app_logo":
-        image_url = image_data["image_url"]
+    # app 品牌用 Google favicon，其他全部走 Wikipedia → Tavily → fallback
+    if is_app_brand:
+        image_url = brand_data["image_url"]
         image_type = "app_logo"
-    elif tavily_image_url:
-        image_url = tavily_image_url
-        image_type = "product"
     else:
-        image_url = image_data["image_url"]
-        image_type = image_data["image_type"]
+        img_result = get_best_image(data.product_name, tavily_image_url)
+        image_url = img_result["image_url"]
+        image_type = img_result["image_type"]
 
     print("tavily results:", len(tavily_results))
     print("image url:", image_url)
