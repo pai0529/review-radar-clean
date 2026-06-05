@@ -70,7 +70,8 @@ def debug_version():
 def get_brand_image(product_name: str):
     name = product_name.lower()
 
-    # App / 軟體 / 服務 / 餐廳品牌 → 用 Clearbit 高解析度 logo，不會被 Tavily 隨機圖覆蓋
+    # 只有大型 app / 軟體 / 社群服務才用 Google favicon（這些網域一定有高品質 favicon）
+    # 餐廳、實體品牌交給 Tavily 搜食物/產品照，效果更好
     app_brands = {
         # AI / 工具
         "chatgpt": "openai.com",
@@ -79,7 +80,7 @@ def get_brand_image(product_name: str):
         "gemini": "gemini.google.com",
         "notion": "notion.so",
         "cursor": "cursor.com",
-        # 社群 / 娛樂
+        # 社群 / 娛樂 app
         "tiktok": "tiktok.com",
         "instagram": "instagram.com",
         "discord": "discord.com",
@@ -90,21 +91,9 @@ def get_brand_image(product_name: str):
         "facebook": "facebook.com",
         "line": "line.me",
         "threads": "threads.net",
-        # 餐廳品牌
-        "mcdonald": "mcdonalds.com",
-        "麥當勞": "mcdonalds.com",
-        "kfc": "kfc.com",
-        "肯德基": "kfc.com",
-        "din tai fung": "dintaifung.com.tw",
-        "鼎泰豐": "dintaifung.com.tw",
-        "haidilao": "haidilao.com",
-        "海底撈": "haidilao.com",
-        "kura": "kurasushi.com",
-        "藏壽司": "kurasushi.com",
-        "burger king": "burgerking.com",
-        "漢堡王": "burgerking.com",
-        "starbucks": "starbucks.com",
-        "星巴克": "starbucks.com",
+        "reddit": "reddit.com",
+        "twitch": "twitch.tv",
+        "linkedin": "linkedin.com",
     }
 
     for key, domain in app_brands.items():
