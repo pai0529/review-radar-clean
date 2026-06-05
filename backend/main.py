@@ -182,10 +182,13 @@ def analyze_reviews(data: ReviewRequest):
         for item in tavily_results
     ]
 
-    # 如果 get_brand_image 只找到 fallback，改用 Tavily 搜到的圖片
-    if image_type == "fallback" and tavily_image_url:
+    # 優先用 Tavily 搜到的圖片，找不到才用 brand logo / fallback
+    if tavily_image_url:
         image_url = tavily_image_url
         image_type = "product"
+    else:
+        image_url = image_data["image_url"]
+        image_type = image_data["image_type"]
 
     print("tavily results:", len(tavily_results))
     print("image url:", image_url)

@@ -14,34 +14,57 @@ def search_web_reviews(product_name):
         f"{product_name} review pros cons",
     ]
 
-    image_query = f"{product_name} official product image"
+    # 用多個查詢提高找到正確圖片的機率
+    image_queries = [
+        f"{product_name} product photo",
+        f"{product_name} official image",
+    ]
+
+    # 過濾掉廣告、icon、小圖等不合適的圖片
+    BAD_URL_PATTERNS = [
+        "favicon", "icon", "logo", "avatar", "thumb",
+        "ads", "banner", "sponsor", "tracking",
+        ".gif", "pixel", "1x1",
+    ]
+
+    def is_good_image(url: str) -> bool:
+        url_lower = url.lower()
+        if any(p in url_lower for p in BAD_URL_PATTERNS):
+            return False
+        # 只接受常見圖片格式或 CDN URL
+        return any(ext in url_lower for ext in [".jpg", ".jpeg", ".png", ".webp", "images", "img", "media", "photo"])
 
     all_results = []
     image_url = ""
 
-    # 先搜尋商品圖片
-    try:
-        image_response = requests.post(
-            "https://api.tavily.com/search",
-            json={
-                "api_key": TAVILY_API_KEY,
-                "query": image_query,
-                "search_depth": "basic",
-                "max_results": 3,
-                "include_images": True,
-            },
-            timeout=15,
-        )
+    # 搜尋商品圖片
+    for image_query in image_queries:
+        if image_url:
+            break
+        try:
+            image_response = requests.post(
+                "https://api.tavily.com/search",
+                json={
+                    "api_key": TAVILY_API_KEY,
+                    "query": image_query,
+                    "search_depth": "basic",
+                    "max_results": 5,
+                    "include_images": True,
+                },
+                timeout=15,
+            )
 
-        if image_response.status_code == 200:
-            image_data = image_response.json()
-            images = image_data.get("images", [])
+            if image_response.status_code == 200:
+                image_data = image_response.json()
+                images = image_data.get("images", [])
+                good_images = [img for img in images if is_good_image(img)]
+                if good_images:
+                    image_url = good_images[0]
+                elif images:
+                    image_url = images[0]  # fallback 到第一張
 
-            if images:
-                image_url = images[0]
-
-    except Exception as e:
-        print("Tavily image error:", e)
+        except Exception as e:
+            print("Tavily image error:", e)
 
     # 再搜尋評論資料
     for query in queries:
