@@ -110,7 +110,7 @@ def get_brand_image(product_name: str):
     for key, domain in app_brands.items():
         if key in name:
             return {
-                "image_url": f"https://logo.clearbit.com/{domain}",
+                "image_url": f"https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://{domain}&size=256",
                 "image_type": "app_logo",  # 這個 type 不會被 Tavily 覆蓋
             }
 

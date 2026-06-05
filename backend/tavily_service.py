@@ -14,10 +14,10 @@ def search_web_reviews(product_name):
         f"{product_name} review pros cons",
     ]
 
-    # 用多個查詢提高找到正確圖片的機率（logo / cover art 優先）
+    # 用多個查詢提高找到正確圖片的機率
     image_queries = [
-        f"{product_name} logo icon official",
-        f"{product_name} cover art official image",
+        f"{product_name} official product photo",
+        f"{product_name} cover art",
     ]
 
     # 過濾掉廣告、icon、小圖等不合適的圖片

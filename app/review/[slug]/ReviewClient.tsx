@@ -133,12 +133,21 @@ export default function ReviewClient({ slug }: { slug: string }) {
                     src={imageUrl}
                     alt={productName}
                     className={imageClass}
+                    onError={(e) => {
+                      // 圖片載入失敗時換成文字頭像
+                      (e.target as HTMLImageElement).style.display = "none";
+                      const fallback = document.getElementById(`img-fallback-${slug}`);
+                      if (fallback) fallback.style.display = "flex";
+                    }}
                   />
-                ) : (
-                  <div className="flex h-32 w-32 items-center justify-center rounded-3xl bg-black text-5xl font-bold text-white">
-                    {productName.slice(0, 1).toUpperCase()}
-                  </div>
-                )}
+                ) : null}
+                <div
+                  id={`img-fallback-${slug}`}
+                  className="flex h-32 w-32 items-center justify-center rounded-3xl bg-black text-5xl font-bold text-white"
+                  style={{ display: imageUrl ? "none" : "flex" }}
+                >
+                  {productName.slice(0, 1).toUpperCase()}
+                </div>
               </div>
 
               <div className="flex flex-col justify-center text-left">
