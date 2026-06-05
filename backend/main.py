@@ -70,20 +70,27 @@ def debug_version():
 def get_brand_image(product_name: str):
     name = product_name.lower()
 
-    brand_domains = {
+    # App / 軟體 / 服務 / 餐廳品牌 → 用 Clearbit 高解析度 logo，不會被 Tavily 隨機圖覆蓋
+    app_brands = {
+        # AI / 工具
         "chatgpt": "openai.com",
         "openai": "openai.com",
         "claude": "anthropic.com",
         "gemini": "gemini.google.com",
         "notion": "notion.so",
         "cursor": "cursor.com",
-
+        # 社群 / 娛樂
         "tiktok": "tiktok.com",
         "instagram": "instagram.com",
         "discord": "discord.com",
         "spotify": "spotify.com",
         "netflix": "netflix.com",
-
+        "youtube": "youtube.com",
+        "twitter": "twitter.com",
+        "facebook": "facebook.com",
+        "line": "line.me",
+        "threads": "threads.net",
+        # 餐廳品牌
         "mcdonald": "mcdonalds.com",
         "麥當勞": "mcdonalds.com",
         "kfc": "kfc.com",
@@ -94,17 +101,17 @@ def get_brand_image(product_name: str):
         "海底撈": "haidilao.com",
         "kura": "kurasushi.com",
         "藏壽司": "kurasushi.com",
+        "burger king": "burgerking.com",
+        "漢堡王": "burgerking.com",
+        "starbucks": "starbucks.com",
+        "星巴克": "starbucks.com",
     }
 
-    for key, domain in brand_domains.items():
+    for key, domain in app_brands.items():
         if key in name:
             return {
-                "image_url": (
-                    "https://www.google.com/s2/favicons"
-                    f"?domain={domain}"
-                    "&sz=256"
-                ),
-                "image_type": "logo"
+                "image_url": f"https://logo.clearbit.com/{domain}",
+                "image_type": "app_logo",  # 這個 type 不會被 Tavily 覆蓋
             }
 
     return {
@@ -182,8 +189,12 @@ def analyze_reviews(data: ReviewRequest):
         for item in tavily_results
     ]
 
-    # 優先用 Tavily 搜到的圖片，找不到才用 brand logo / fallback
-    if tavily_image_url:
+    # app_logo 類（Instagram、TikTok 等）固定用 Clearbit logo，不被 Tavily 隨機圖覆蓋
+    # 其他類（實體商品、餐廳、遊戲）優先用 Tavily 搜到的圖
+    if image_data["image_type"] == "app_logo":
+        image_url = image_data["image_url"]
+        image_type = "app_logo"
+    elif tavily_image_url:
         image_url = tavily_image_url
         image_type = "product"
     else:

@@ -83,6 +83,8 @@ export default function ReviewClient({ slug }: { slug: string }) {
   const imageClass =
     imageType === "product"
       ? "max-h-44 max-w-full object-contain"
+      : imageType === "app_logo"
+      ? "h-28 w-28 object-contain rounded-2xl"
       : "max-h-28 max-w-28 object-contain";
 
   return (
