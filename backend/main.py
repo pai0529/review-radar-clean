@@ -54,14 +54,20 @@ def get_brand_image(product_name: str):
         "cursor": "cursor.com",
 
         "iphone": "apple.com",
+        "apple": "apple.com",
         "galaxy": "samsung.com",
+        "samsung": "samsung.com",
         "rog": "asus.com",
+        "asus": "asus.com",
         "pixel": "google.com",
         "xiaomi": "mi.com",
 
         "steam deck": "steampowered.com",
+        "steam": "steampowered.com",
         "nintendo": "nintendo.com",
+        "switch": "nintendo.com",
         "ps5": "playstation.com",
+        "playstation": "playstation.com",
         "xbox": "xbox.com",
 
         "tiktok": "tiktok.com",
@@ -71,7 +77,9 @@ def get_brand_image(product_name: str):
         "netflix": "netflix.com",
 
         "mcdonald": "mcdonalds.com",
+        "麥當勞": "mcdonalds.com",
         "kfc": "kfc.com",
+        "肯德基": "kfc.com",
         "din tai fung": "dintaifung.com.tw",
         "鼎泰豐": "dintaifung.com.tw",
         "haidilao": "haidilao.com",
@@ -82,7 +90,11 @@ def get_brand_image(product_name: str):
 
     for key, domain in brand_domains.items():
         if key in name:
-            return f"https://logo.clearbit.com/{domain}"
+            return (
+                "https://www.google.com/s2/favicons"
+                f"?domain={domain}"
+                "&sz=256"
+            )
 
     return (
         "https://ui-avatars.com/api/"
