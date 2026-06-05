@@ -39,36 +39,40 @@ def health():
 @app.get("/debug-version")
 def debug_version():
     return {
-        "version": "pulsepick-brand-logo-layout",
+        "version": "pulsepick-product-image-type-v1",
         "analyze_type": "json_body"
     }
 
 def get_brand_image(product_name: str):
     name = product_name.lower()
 
+    product_images = {
+        "iphone 15": "https://store.storeimages.cdn-apple.com/8756/as-images.apple.com/is/iphone-15-finish-select-202309-6-1inch-pink?wid=512&hei=512&fmt=png-alpha&.v=1692923780378",
+        "galaxy s24": "https://images.samsung.com/is/image/samsung/p6pim/tw/sm-s9210zyebri/gallery/tw-galaxy-s24-s921-sm-s9210zyebri-thumb-539359471?$344_344_PNG$",
+        "rog phone": "https://dlcdnwebimgs.asus.com/gain/43F7F26E-5F73-4A88-A5F0-3B5F13F5EF84/w717/h525",
+        "google pixel 9": "https://lh3.googleusercontent.com/9zw3E-rqQHHy5PlEEJTEd6GlnWl6cR-7FTxxlSnrCUQO2S4t2vvgVCmniqVD61RGx_4FfBX2eW8ZmQ0JZtuw",
+        "pixel 9": "https://lh3.googleusercontent.com/9zw3E-rqQHHy5PlEEJTEd6GlnWl6cR-7FTxxlSnrCUQO2S4t2vvgVCmniqVD61RGx_4FfBX2eW8ZmQ0JZtuw",
+        "xiaomi 14": "https://i02.appmifile.com/mi-com-product/fly-birds/xiaomi-14/pc/section01-phone.png",
+        "steam deck": "https://cdn.cloudflare.steamstatic.com/steamdeck/images/steamdeck_hero.png",
+        "ps5": "https://gmedia.playstation.com/is/image/SIEPDC/ps5-product-thumbnail-01-en-14sep21?$facebook$",
+        "xbox series x": "https://assets.xboxservices.com/assets/c9/6c/c96c05ca-6d69-4d18-879a-9425d41a7215.png?n=642227_Hero-Gallery-0_A1_857x676.png",
+        "nintendo switch 2": "https://assets.nintendo.com/image/upload/f_auto/q_auto/dpr_1.5/c_scale,w_500/ncom/My%20Nintendo%20Store/EN-US/Hardware/nintendo-switch-2/110693-nintendo-switch-2/110693-nintendo-switch-2-package-1200x675",
+    }
+
+    for key, url in product_images.items():
+        if key in name:
+            return {
+                "image_url": url,
+                "image_type": "product"
+            }
+
     brand_domains = {
         "chatgpt": "openai.com",
+        "openai": "openai.com",
         "claude": "anthropic.com",
-        "gemini": "google.com",
+        "gemini": "gemini.google.com",
         "notion": "notion.so",
         "cursor": "cursor.com",
-
-        "iphone": "apple.com",
-        "apple": "apple.com",
-        "galaxy": "samsung.com",
-        "samsung": "samsung.com",
-        "rog": "asus.com",
-        "asus": "asus.com",
-        "pixel": "google.com",
-        "xiaomi": "mi.com",
-
-        "steam deck": "steampowered.com",
-        "steam": "steampowered.com",
-        "nintendo": "nintendo.com",
-        "switch": "nintendo.com",
-        "ps5": "playstation.com",
-        "playstation": "playstation.com",
-        "xbox": "xbox.com",
 
         "tiktok": "tiktok.com",
         "instagram": "instagram.com",
@@ -90,19 +94,25 @@ def get_brand_image(product_name: str):
 
     for key, domain in brand_domains.items():
         if key in name:
-            return (
-                "https://www.google.com/s2/favicons"
-                f"?domain={domain}"
-                "&sz=256"
-            )
+            return {
+                "image_url": (
+                    "https://www.google.com/s2/favicons"
+                    f"?domain={domain}"
+                    "&sz=256"
+                ),
+                "image_type": "logo"
+            }
 
-    return (
-        "https://ui-avatars.com/api/"
-        f"?name={quote(product_name)}"
-        "&background=111827"
-        "&color=ffffff"
-        "&size=512"
-    )
+    return {
+        "image_url": (
+            "https://ui-avatars.com/api/"
+            f"?name={quote(product_name)}"
+            "&background=111827"
+            "&color=ffffff"
+            "&size=512"
+        ),
+        "image_type": "fallback"
+    }
 
 class ReviewRequest(BaseModel):
     product_name: str
@@ -127,7 +137,9 @@ def analyze_reviews(data: ReviewRequest):
 
     print("cache miss:", slug)
 
-    image_url = get_brand_image(data.product_name)
+    image_data = get_brand_image(data.product_name)
+    image_url = image_data["image_url"]
+    image_type = image_data["image_type"]
 
     youtube_data = collect_youtube_reviews(
         data.product_name,
@@ -161,7 +173,6 @@ def analyze_reviews(data: ReviewRequest):
     print("dcard comments:", len(dcard_comments))
 
     tavily_data = search_web_reviews(data.product_name)
-
     tavily_results = tavily_data["results"] if isinstance(tavily_data, dict) else tavily_data
 
     tavily_texts = [
@@ -171,6 +182,7 @@ def analyze_reviews(data: ReviewRequest):
 
     print("tavily results:", len(tavily_results))
     print("image url:", image_url)
+    print("image type:", image_type)
 
     all_reviews = (
         data.reviews
@@ -240,6 +252,7 @@ JSON 格式如下：
     result = {
         "product_name": data.product_name,
         "image_url": image_url,
+        "image_type": image_type,
 
         "manual_reviews_count": len(data.reviews),
 

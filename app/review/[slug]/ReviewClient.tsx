@@ -22,6 +22,7 @@ export default function ReviewClient({ slug }: { slug: string }) {
 
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [imageUrl, setImageUrl] = useState("");
+  const [imageType, setImageType] = useState("logo");
   const [youtubeCount, setYoutubeCount] = useState(0);
   const [tavilyCount, setTavilyCount] = useState(0);
   const [cached, setCached] = useState(false);
@@ -60,6 +61,7 @@ export default function ReviewClient({ slug }: { slug: string }) {
 
         setAnalysis(data.analysis);
         setImageUrl(data.image_url || "");
+        setImageType(data.image_type || "logo");
         setYoutubeCount(data.youtube_comments_count || 0);
         setTavilyCount(data.tavily_results_count || 0);
         setCached(data.cached || false);
@@ -78,6 +80,11 @@ export default function ReviewClient({ slug }: { slug: string }) {
     ? Math.min(100, Math.max(0, analysis.score * 10))
     : 0;
 
+  const imageClass =
+    imageType === "product"
+      ? "max-h-44 max-w-full object-contain"
+      : "max-h-28 max-w-28 object-contain";
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black px-6 py-10 text-white">
       <section className="mx-auto max-w-6xl">
@@ -95,8 +102,8 @@ export default function ReviewClient({ slug }: { slug: string }) {
           </h1>
 
           <p className="mt-4 max-w-2xl text-zinc-400">
-            PulsePick 會自動整理 YouTube、PTT、Dcard、Reddit、Mobile01 等平台的討論，
-            並用 AI 產生較客觀的口碑分析。
+            PulsePick 會整合 YouTube 與網路搜尋結果，
+            並利用 AI 產生客觀的口碑分析與購買建議。
           </p>
         </div>
 
@@ -118,12 +125,12 @@ export default function ReviewClient({ slug }: { slug: string }) {
         {analysis && (
           <>
             <section className="mt-8 grid gap-6 rounded-3xl border border-white/10 bg-white/10 p-6 backdrop-blur md:grid-cols-[220px_1fr]">
-              <div className="flex h-56 items-center justify-center rounded-3xl bg-white p-8">
+              <div className="flex h-56 items-center justify-center rounded-3xl bg-white p-6">
                 {imageUrl ? (
                   <img
                     src={imageUrl}
                     alt={productName}
-                    className="max-h-full max-w-full object-contain"
+                    className={imageClass}
                   />
                 ) : (
                   <div className="flex h-32 w-32 items-center justify-center rounded-3xl bg-black text-5xl font-bold text-white">
