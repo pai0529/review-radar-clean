@@ -62,43 +62,33 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Categories */}
+        {/* Hot Searches */}
         <div className="mt-10">
+          <p className="mb-4 text-sm text-zinc-500">熱門搜尋</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {["iPhone 15", "ChatGPT", "Galaxy S24", "Netflix", "PS5", "鼎泰豐", "Cursor", "Nintendo Switch 2"].map((item) => (
+              <button
+                key={item}
+                onClick={() => {
+                  setQuery(item);
+                  router.push(`/review/${item.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^\w一-龥-]/g, "")}`);
+                }}
+                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-300 transition hover:bg-white hover:text-black"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
 
-          <p className="mb-4 text-sm text-zinc-500">
-            熱門分類
-          </p>
-
+        {/* Categories */}
+        <div className="mt-8">
+          <p className="mb-4 text-sm text-zinc-500">熱門分類</p>
           <div className="flex flex-wrap justify-center gap-3">
-
-            <a
-              href="/category/ai-tools"
-              className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black"
-            >
-              AI Tools
-            </a>
-
-            <a
-              href="/category/3c"
-              className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black"
-            >
-              3C
-            </a>
-
-           <a
-              href="/category/apps"
-              className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black"
-            >
-              Apps
-          </a>
-            <a
-              href="/category/restaurants"
-              className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black"
-            >
-              Restaurants
-          </a>
-            
-
+            <a href="/category/ai-tools" className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black">AI Tools</a>
+            <a href="/category/3c" className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black">3C</a>
+            <a href="/category/apps" className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black">Apps</a>
+            <a href="/category/restaurants" className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-300 transition hover:bg-white hover:text-black">Restaurants</a>
           </div>
         </div>
 

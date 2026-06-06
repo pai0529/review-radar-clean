@@ -19,11 +19,23 @@ export async function generateMetadata({
 
   return {
     title: `${productName} 評價總整理｜PulsePick`,
-    description: `PulsePick 使用 AI 整理 YouTube、PTT、Dcard、Reddit、Mobile01 等平台的 ${productName} 真實評價、優缺點與購買建議。`,
+    description: `PulsePick 使用 AI 整理 YouTube、PTT、Dcard、Reddit 等平台的 ${productName} 真實評價、優缺點與購買建議。`,
     openGraph: {
       title: `${productName} 評價總整理｜PulsePick`,
       description: `AI 整理 ${productName} 的全網評價與真實口碑。`,
       type: "website",
+      images: [
+        {
+          url: `https://pulsepick.vercel.app/api/og?name=${encodeURIComponent(productName)}`,
+          width: 1200,
+          height: 630,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${productName} 評價總整理｜PulsePick`,
+      description: `AI 整理 ${productName} 的全網評價與真實口碑。`,
     },
   };
 }

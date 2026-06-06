@@ -38,6 +38,7 @@ export default function ReviewClient({ slug }: { slug: string }) {
 
       setTimeout(() => setStatusText("正在整理 YouTube 與網路討論..."), 1200);
       setTimeout(() => setStatusText("正在交給 AI 分析評論..."), 2400);
+      setTimeout(() => setStatusText("首次查詢需要喚醒伺服器，請稍候最多 60 秒⋯"), 5000);
 
       try {
         const res = await fetch("https://review-radar-clean.onrender.com/analyze", {
@@ -175,6 +176,20 @@ export default function ReviewClient({ slug }: { slug: string }) {
                   <span className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">
                     {youtubeCount} 則 YouTube 留言
                   </span>
+
+                  <button
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({ title: `${productName} 評價分析`, url: window.location.href });
+                      } else {
+                        navigator.clipboard.writeText(window.location.href);
+                        alert("連結已複製！");
+                      }
+                    }}
+                    className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300 transition hover:border-white hover:text-white"
+                  >
+                    分享 ↗
+                  </button>
                 </div>
               </div>
             </section>
