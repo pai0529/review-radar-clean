@@ -11,6 +11,8 @@ from youtube_service import collect_youtube_reviews
 from reddit_service import collect_reddit_reviews
 from dcard_service import collect_dcard_reviews
 from tavily_service import search_web_reviews
+from ptt_service import collect_ptt_reviews
+from googlemaps_service import collect_googlemaps_reviews
 from image_service import get_best_image, get_wikipedia_image
 
 import os
@@ -170,6 +172,12 @@ def analyze_reviews(data: ReviewRequest):
 
     print("dcard comments:", len(dcard_comments))
 
+    ptt_data = collect_ptt_reviews(data.product_name, max_posts=3)
+    ptt_comments = ptt_data["comments"]
+    ptt_texts = [comment["text"] for comment in ptt_comments]
+
+    print("ptt comments:", len(ptt_comments))
+
     tavily_data = search_web_reviews(data.product_name)
     tavily_results = tavily_data["results"] if isinstance(tavily_data, dict) else tavily_data
     tavily_image_url = tavily_data.get("image_url", "") if isinstance(tavily_data, dict) else ""
@@ -187,6 +195,15 @@ def analyze_reviews(data: ReviewRequest):
     ]
     name_lower = data.product_name.lower()
     is_restaurant = any(k in name_lower for k in restaurant_keywords)
+
+    # Google Maps 評論（只對餐廳類抓）
+    googlemaps_comments = []
+    googlemaps_texts = []
+    if is_restaurant:
+        gm_data = collect_googlemaps_reviews(data.product_name)
+        googlemaps_comments = gm_data["comments"]
+        googlemaps_texts = [c["text"] for c in googlemaps_comments]
+        print("google maps reviews:", len(googlemaps_comments))
 
     # app 品牌用 Google favicon，餐廳搜 logo，其他搜產品圖
     if is_app_brand:
@@ -207,6 +224,8 @@ def analyze_reviews(data: ReviewRequest):
         + youtube_texts
         + reddit_texts
         + dcard_texts
+        + ptt_texts
+        + googlemaps_texts
         + tavily_texts
     )
 
@@ -282,6 +301,11 @@ JSON 格式如下：
 
         "dcard_comments_count": len(dcard_comments),
         "dcard_posts": dcard_data["posts"],
+
+        "ptt_comments_count": len(ptt_comments),
+        "ptt_posts": ptt_data["posts"],
+
+        "googlemaps_reviews_count": len(googlemaps_comments),
 
         "tavily_results_count": len(tavily_results),
         "tavily_results": tavily_results,
