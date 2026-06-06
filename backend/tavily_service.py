@@ -10,7 +10,9 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 def search_web_reviews(product_name):
     queries = [
         f"{product_name} 評價 心得 優缺點",
-        f"{product_name} PTT Dcard Mobile01 評價",
+        f"{product_name} site:dcard.tw",
+        f"{product_name} site:reddit.com",
+        f"{product_name} PTT Mobile01 評價",
         f"{product_name} review pros cons",
     ]
 

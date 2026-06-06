@@ -8,8 +8,6 @@ from pathlib import Path
 from urllib.parse import quote
 
 from youtube_service import collect_youtube_reviews
-from reddit_service import collect_reddit_reviews
-from dcard_service import collect_dcard_reviews
 from tavily_service import search_web_reviews
 from ptt_service import collect_ptt_reviews
 from googlemaps_service import collect_googlemaps_reviews
@@ -152,26 +150,6 @@ def analyze_reviews(data: ReviewRequest):
 
     print("youtube comments:", len(youtube_comments))
 
-    reddit_data = collect_reddit_reviews(
-        data.product_name,
-        limit=5
-    )
-
-    reddit_comments = reddit_data["comments"]
-    reddit_texts = [comment["text"] for comment in reddit_comments]
-
-    print("reddit comments:", len(reddit_comments))
-
-    dcard_data = collect_dcard_reviews(
-        data.product_name,
-        limit=5
-    )
-
-    dcard_comments = dcard_data["comments"]
-    dcard_texts = [comment["text"] for comment in dcard_comments]
-
-    print("dcard comments:", len(dcard_comments))
-
     ptt_data = collect_ptt_reviews(data.product_name, max_posts=3)
     ptt_comments = ptt_data["comments"]
     ptt_texts = [comment["text"] for comment in ptt_comments]
@@ -222,11 +200,9 @@ def analyze_reviews(data: ReviewRequest):
     all_reviews = (
         data.reviews
         + youtube_texts
-        + reddit_texts
-        + dcard_texts
         + ptt_texts
         + googlemaps_texts
-        + tavily_texts
+        + tavily_texts  # 已包含 Dcard、Reddit、PTT、Mobile01
     )
 
     reviews_text = "\n".join(all_reviews)
@@ -295,12 +271,6 @@ JSON 格式如下：
 
         "youtube_comments_count": len(youtube_comments),
         "youtube_videos": youtube_data["videos"],
-
-        "reddit_comments_count": len(reddit_comments),
-        "reddit_posts": reddit_data["posts"],
-
-        "dcard_comments_count": len(dcard_comments),
-        "dcard_posts": dcard_data["posts"],
 
         "ptt_comments_count": len(ptt_comments),
         "ptt_posts": ptt_data["posts"],
