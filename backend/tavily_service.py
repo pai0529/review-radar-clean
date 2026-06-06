@@ -12,7 +12,8 @@ def search_web_reviews(product_name):
         f"{product_name} 評價 心得 優缺點",
         f"{product_name} site:dcard.tw",
         f"{product_name} site:reddit.com",
-        f"{product_name} PTT Mobile01 評價",
+        f"{product_name} site:ptt.cc",
+        f"{product_name} Mobile01 評價 推薦",
         f"{product_name} review pros cons",
     ]
 

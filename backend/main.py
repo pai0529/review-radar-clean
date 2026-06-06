@@ -8,8 +8,10 @@ from pathlib import Path
 from urllib.parse import quote
 
 from youtube_service import collect_youtube_reviews
-from tavily_service import search_web_reviews
+from reddit_service import collect_reddit_reviews
+from dcard_service import collect_dcard_reviews
 from ptt_service import collect_ptt_reviews
+from tavily_service import search_web_reviews
 from googlemaps_service import collect_googlemaps_reviews
 from image_service import get_best_image, get_wikipedia_image
 
@@ -150,11 +152,30 @@ def analyze_reviews(data: ReviewRequest):
 
     print("youtube comments:", len(youtube_comments))
 
-    ptt_data = collect_ptt_reviews(data.product_name, max_posts=3)
-    ptt_comments = ptt_data["comments"]
-    ptt_texts = [comment["text"] for comment in ptt_comments]
+    # 直接 API — 能抓就抓，失敗靜默跳過（Tavily 會補上）
+    reddit_texts = []
+    try:
+        reddit_data = collect_reddit_reviews(data.product_name, limit=5)
+        reddit_texts = [c["text"] for c in reddit_data["comments"]]
+        print("reddit comments:", len(reddit_texts))
+    except Exception as e:
+        print("reddit skipped:", e)
 
-    print("ptt comments:", len(ptt_comments))
+    dcard_texts = []
+    try:
+        dcard_data = collect_dcard_reviews(data.product_name, limit=5)
+        dcard_texts = [c["text"] for c in dcard_data["comments"]]
+        print("dcard comments:", len(dcard_texts))
+    except Exception as e:
+        print("dcard skipped:", e)
+
+    ptt_texts = []
+    try:
+        ptt_data = collect_ptt_reviews(data.product_name, max_posts=3)
+        ptt_texts = [c["text"] for c in ptt_data["comments"]]
+        print("ptt comments:", len(ptt_texts))
+    except Exception as e:
+        print("ptt skipped:", e)
 
     tavily_data = search_web_reviews(data.product_name)
     tavily_results = tavily_data["results"] if isinstance(tavily_data, dict) else tavily_data
@@ -200,9 +221,11 @@ def analyze_reviews(data: ReviewRequest):
     all_reviews = (
         data.reviews
         + youtube_texts
+        + reddit_texts
+        + dcard_texts
         + ptt_texts
         + googlemaps_texts
-        + tavily_texts  # 已包含 Dcard、Reddit、PTT、Mobile01
+        + tavily_texts  # 包含 PTT、Dcard、Reddit、Mobile01（fallback）
     )
 
     reviews_text = "\n".join(all_reviews)
@@ -271,9 +294,6 @@ JSON 格式如下：
 
         "youtube_comments_count": len(youtube_comments),
         "youtube_videos": youtube_data["videos"],
-
-        "ptt_comments_count": len(ptt_comments),
-        "ptt_posts": ptt_data["posts"],
 
         "googlemaps_reviews_count": len(googlemaps_comments),
 
