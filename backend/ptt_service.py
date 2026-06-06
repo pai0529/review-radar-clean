@@ -1,37 +1,44 @@
+import time
 import requests
 from bs4 import BeautifulSoup
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-    "Cookie": "over18=1",
-}
-
-# 依商品類型選看板
 BOARDS = [
-    "MobileComm",   # 手機
-    "nb-shopping",  # 筆電/3C
-    "PC_Shopping",  # 電腦
-    "Steam",        # 遊戲
-    "food",         # 食物
-    "eat",          # 美食
+    "MobileComm",
+    "nb-shopping",
+    "PC_Shopping",
+    "Steam",
+    "food",
+    "eat",
 ]
 
+def _make_session() -> requests.Session:
+    """建立模擬真實瀏覽器的 Session，並通過 PTT 的年齡驗證"""
+    session = requests.Session()
+    session.headers.update({
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8",
+        "Referer": "https://www.ptt.cc/",
+    })
+    # 設定 over18 cookie 通過年齡驗證
+    session.cookies.set("over18", "1", domain="www.ptt.cc")
+    return session
 
-def _fetch_article_text(href: str) -> str:
+
+def _fetch_article_text(session: requests.Session, href: str) -> str:
     try:
-        resp = requests.get(
-            f"https://www.ptt.cc{href}",
-            headers=HEADERS,
-            timeout=8,
-        )
+        resp = session.get(f"https://www.ptt.cc{href}", timeout=8)
         if resp.status_code != 200:
             return ""
         soup = BeautifulSoup(resp.text, "html.parser")
         content = soup.select_one("#main-content")
         if not content:
             return ""
-        # 移除 meta 資訊區塊，只留文章本文
-        for tag in content.select(".article-metaline, .article-metaline-right"):
+        for tag in content.select(".article-metaline, .article-metaline-right, .push"):
             tag.decompose()
         return content.get_text(separator=" ").strip()[:800]
     except Exception as e:
@@ -42,14 +49,14 @@ def _fetch_article_text(href: str) -> str:
 def collect_ptt_reviews(keyword: str, max_posts: int = 3) -> dict:
     posts = []
     comments = []
+    session = _make_session()
 
     for board in BOARDS:
         if len(posts) >= max_posts * 2:
             break
         try:
-            resp = requests.get(
+            resp = session.get(
                 f"https://www.ptt.cc/bbs/{board}/search?q={keyword}",
-                headers=HEADERS,
                 timeout=10,
             )
             if resp.status_code != 200:
@@ -67,7 +74,8 @@ def collect_ptt_reviews(keyword: str, max_posts: int = 3) -> dict:
                 if not href:
                     continue
 
-                text = _fetch_article_text(href)
+                time.sleep(0.5)  # 避免太快被擋
+                text = _fetch_article_text(session, href)
                 if not text:
                     continue
 
