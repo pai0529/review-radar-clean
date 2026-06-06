@@ -19,6 +19,38 @@ import os
 import json
 import redis as redis_lib
 
+# 中英文對照表：不同語言搜尋同一品牌時，共用 cache 並合併搜尋結果
+NAME_ALIASES: dict[str, dict] = {
+    "鼎泰豐":     {"canonical": "din-tai-fung", "aliases": ["鼎泰豐", "din tai fung"]},
+    "din tai fung": {"canonical": "din-tai-fung", "aliases": ["鼎泰豐", "din tai fung"]},
+    "海底撈":     {"canonical": "haidilao",     "aliases": ["海底撈", "haidilao"]},
+    "haidilao":   {"canonical": "haidilao",     "aliases": ["海底撈", "haidilao"]},
+    "麥當勞":     {"canonical": "mcdonalds",    "aliases": ["麥當勞", "mcdonald's", "mcdonalds"]},
+    "mcdonald":   {"canonical": "mcdonalds",    "aliases": ["麥當勞", "mcdonald's"]},
+    "肯德基":     {"canonical": "kfc",           "aliases": ["肯德基", "kfc"]},
+    "kfc":        {"canonical": "kfc",           "aliases": ["肯德基", "kfc"]},
+    "藏壽司":     {"canonical": "kura-sushi",   "aliases": ["藏壽司", "kura sushi"]},
+    "kura sushi": {"canonical": "kura-sushi",   "aliases": ["藏壽司", "kura sushi"]},
+    "星巴克":     {"canonical": "starbucks",    "aliases": ["星巴克", "starbucks"]},
+    "starbucks":  {"canonical": "starbucks",    "aliases": ["星巴克", "starbucks"]},
+    "漢堡王":     {"canonical": "burger-king",  "aliases": ["漢堡王", "burger king"]},
+    "burger king":{"canonical": "burger-king",  "aliases": ["漢堡王", "burger king"]},
+}
+
+def resolve_name(product_name: str) -> tuple[str, list[str]]:
+    """
+    回傳 (canonical_slug, search_aliases)
+    - canonical_slug：用於 cache key，確保中英文同一商品共用 cache
+    - search_aliases：搜尋時要用的所有名稱
+    """
+    name_lower = product_name.lower().strip()
+    for key, info in NAME_ALIASES.items():
+        if key.lower() == name_lower:
+            return info["canonical"], info["aliases"]
+    # 找不到對照表 → 用原始名稱
+    slug = product_name.lower().strip().replace(" ", "-")
+    return slug, [product_name]
+
 load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -127,7 +159,8 @@ def analyze_reviews(data: ReviewRequest):
     print("analyze endpoint hit")
     print(data)
 
-    slug = data.product_name.lower().replace(" ", "-")
+    slug, search_aliases = resolve_name(data.product_name)
+    primary_name = search_aliases[0]  # 第一個 alias 作為主要顯示名稱
 
     cached_data = cache_get(slug)
     if cached_data:
@@ -141,15 +174,18 @@ def analyze_reviews(data: ReviewRequest):
     brand_data = get_brand_image(data.product_name)
     is_app_brand = brand_data["image_type"] == "app_logo"
 
-    youtube_data = collect_youtube_reviews(
-        data.product_name,
-        max_videos=3,
-        comments_per_video=20
-    )
+    # YouTube 同時搜所有別名（中英文都抓）
+    youtube_comments = []
+    seen_video_ids = set()
+    for alias in search_aliases:
+        result = collect_youtube_reviews(alias, max_videos=2, comments_per_video=20)
+        for video in result["videos"]:
+            if video["video_id"] not in seen_video_ids:
+                seen_video_ids.add(video["video_id"])
+        for comment in result["comments"]:
+            youtube_comments.append(comment)
 
-    youtube_comments = youtube_data["comments"]
-    youtube_texts = [comment["text"] for comment in youtube_comments]
-
+    youtube_texts = [c["text"] for c in youtube_comments]
     print("youtube comments:", len(youtube_comments))
 
     # 直接 API — 能抓就抓，失敗靜默跳過（Tavily 會補上）
@@ -293,7 +329,7 @@ JSON 格式如下：
         "manual_reviews_count": len(data.reviews),
 
         "youtube_comments_count": len(youtube_comments),
-        "youtube_videos": youtube_data["videos"],
+        "youtube_videos": [],
 
         "googlemaps_reviews_count": len(googlemaps_comments),
 
