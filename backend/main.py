@@ -179,12 +179,22 @@ def analyze_reviews(data: ReviewRequest):
         for item in tavily_results
     ]
 
-    # app 品牌用 Google favicon，其他全部走 Wikipedia → Tavily → fallback
+    # 餐廳品牌清單 → 搜 logo 而非食物照
+    restaurant_keywords = [
+        "kfc", "肯德基", "mcdonald", "麥當勞", "burger king", "漢堡王",
+        "starbucks", "星巴克", "din tai fung", "鼎泰豐",
+        "haidilao", "海底撈", "kura", "藏壽司",
+    ]
+    name_lower = data.product_name.lower()
+    is_restaurant = any(k in name_lower for k in restaurant_keywords)
+
+    # app 品牌用 Google favicon，餐廳搜 logo，其他搜產品圖
     if is_app_brand:
         image_url = brand_data["image_url"]
         image_type = "app_logo"
     else:
-        img_result = get_best_image(data.product_name, tavily_image_url)
+        mode = "logo" if is_restaurant else "product"
+        img_result = get_best_image(data.product_name, tavily_image_url, mode=mode)
         image_url = img_result["image_url"]
         image_type = img_result["image_type"]
 

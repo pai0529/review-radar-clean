@@ -5,15 +5,18 @@ HEADERS = {"User-Agent": "PulsePick/1.0 (https://github.com/pai0529/review-radar
 SERPER_API_KEY = os.getenv("SERPER_API_KEY")
 
 
-def get_serper_image(product_name: str) -> str:
-    """用 Serper.dev Google Image Search 取得產品圖片"""
+def get_serper_image(product_name: str, mode: str = "product") -> str:
+    """用 Serper.dev Google Image Search 取得產品圖片
+    mode: 'product'（預設）或 'logo'（品牌/餐廳）
+    """
     if not SERPER_API_KEY:
         return ""
+    q = f"{product_name} logo" if mode == "logo" else product_name
     try:
         resp = requests.post(
             "https://google.serper.dev/images",
             headers={"X-API-KEY": SERPER_API_KEY, "Content-Type": "application/json"},
-            json={"q": product_name, "num": 5},
+            json={"q": q, "num": 5},
             timeout=8,
         )
         if resp.status_code == 200:
@@ -54,7 +57,7 @@ def get_wikipedia_image(product_name: str) -> str:
     return ""
 
 
-def get_best_image(product_name: str, tavily_image_url: str) -> dict:
+def get_best_image(product_name: str, tavily_image_url: str, mode: str = "product") -> dict:
     """
     圖片優先順序：
     1. Serper Google Image Search（準確、有 key 才啟用）
@@ -62,7 +65,7 @@ def get_best_image(product_name: str, tavily_image_url: str) -> dict:
     3. Tavily（最後手段）
     4. 空字串（前端顯示文字 fallback）
     """
-    serper_img = get_serper_image(product_name)
+    serper_img = get_serper_image(product_name, mode=mode)
     if serper_img:
         return {"image_url": serper_img, "image_type": "product"}
 
