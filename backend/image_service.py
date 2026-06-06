@@ -60,14 +60,21 @@ def get_wikipedia_image(product_name: str) -> str:
 def get_best_image(product_name: str, tavily_image_url: str, mode: str = "product") -> dict:
     """
     圖片優先順序：
-    1. Serper Google Image Search（準確、有 key 才啟用）
-    2. Wikipedia（免費、但品質不穩）
-    3. Tavily（最後手段）
-    4. 空字串（前端顯示文字 fallback）
+    1. Serper logo 搜尋（餐廳品牌）
+    2. Serper product 搜尋（logo 找不到時的餐廳 fallback，或一般產品）
+    3. Wikipedia
+    4. Tavily
+    5. 空字串（前端顯示文字 fallback）
     """
     serper_img = get_serper_image(product_name, mode=mode)
     if serper_img:
         return {"image_url": serper_img, "image_type": "product"}
+
+    # 餐廳 logo 找不到 → 改搜食物照
+    if mode == "logo":
+        serper_img = get_serper_image(product_name, mode="product")
+        if serper_img:
+            return {"image_url": serper_img, "image_type": "product"}
 
     wiki_img = get_wikipedia_image(product_name)
     if wiki_img:
