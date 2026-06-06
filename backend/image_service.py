@@ -13,7 +13,7 @@ def get_serper_image(product_name: str) -> str:
         resp = requests.post(
             "https://google.serper.dev/images",
             headers={"X-API-KEY": SERPER_API_KEY, "Content-Type": "application/json"},
-            json={"q": f"{product_name} official product", "num": 5},
+            json={"q": product_name, "num": 5},
             timeout=8,
         )
         if resp.status_code == 200:
